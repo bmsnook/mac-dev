@@ -68,12 +68,6 @@ create_account_ansible_dscl () {
 }
 
 
-## Energy Settings
-echo "Show (get) the current Energy settings"
-get_energy_settings
-#set_energy_settings
-
-
 ## 
 ## COMMANDS - Software Setup Functions Defined
 ## 
@@ -132,9 +126,9 @@ install_rvm () { curl -sSL https://get.rvm.io | bash -s stable; }
 install_android_studio () { cd ${LOCALREPO} && ls -tr android-studio*.dmg | tail -1 | xargs open; }
 
 ## prep to install Jenkins
-prep_jenkins_before_install {
-  sudo mkdir /Users/Shared/Jenkins;
-  chown -R jenkins /Users/Shared/Jenkins;
+prep_jenkins_before_install () {
+  if [ ! -e /Users/Shared/Jenkins ]; then sudo mkdir /Users/Shared/Jenkins; fi;
+  sudo chown -R jenkins /Users/Shared/Jenkins;
 }
 
 ## install Jenkins
@@ -146,18 +140,18 @@ install_jenkins () {
 }
 
 ## prep after Jenkins installation
-prep_jenkins_after_install {
-  ## update /Library/Preferences/org.jenkins-ci.plist
+prep_jenkins_after_install () {
+  ## update /Library/Preferences/org.jenkins-ci.plist;
   if [ -f ${LOCALREPO}/${JENK_PLIST_FILE} ]; then 
-    OLD_UG=`stat -f "%u:%g" ${LIB_PREFS_DIR}/${JENK_PLIST_FILE}
-    OLD_PERM=`stat -f "%p"  ${LIB_PREFS_DIR}/${JENK_PLIST_FILE}
-    cp -p ${LIB_PREFS_DIR}/${JENK_PLIST_FILE} ${LIB_PREFS_DIR}/${JENK_PLIST_FILE}.bak.`date +"%Y%m%d.%H%M"`
-    cp -p ${LOCALREPO}/${JENK_PLIST_FILE} ${LIB_PREFS_DIR}
-    chown ${OLD_UG}   ${LIB_PREFS_DIR}/${JENK_PLIST_FILE}
-    chmod ${OLD_PERM} ${LIB_PREFS_DIR}/${JENK_PLIST_FILE}
+    OLD_UG=`stat -f "%u:%g" ${LIB_PREFS_DIR}/${JENK_PLIST_FILE};
+    OLD_PERM=`stat -f "%p"  ${LIB_PREFS_DIR}/${JENK_PLIST_FILE};
+    cp -p ${LIB_PREFS_DIR}/${JENK_PLIST_FILE} ${LIB_PREFS_DIR}/${JENK_PLIST_FILE}.bak.`date +"%Y%m%d.%H%M"`;
+    cp -p ${LOCALREPO}/${JENK_PLIST_FILE} ${LIB_PREFS_DIR};
+    chown ${OLD_UG}   ${LIB_PREFS_DIR}/${JENK_PLIST_FILE};
+    chmod ${OLD_PERM} ${LIB_PREFS_DIR}/${JENK_PLIST_FILE};
   else
-    echo "No new ${JENK_PLIST_FILE} found in ${LOCALREPO}"
-  fi
+    echo "No new ${JENK_PLIST_FILE} found in ${LOCALREPO}";
+  fi;
 }
 
 ## install Microsoft Visual Studio
