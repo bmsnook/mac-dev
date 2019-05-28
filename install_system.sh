@@ -7,6 +7,8 @@ export BIN="/usr/bin"
 export SBIN="/usr/sbin"
 export DOWNLOADS="~/Downloads"
 export LOCALREPO="${DOWNLOADS}"
+export LIB_PREFS_DIR="/Library/Preferences"
+export JENK_PLIST_FILE="org.jenkins-ci.plist"
 
 ## Using the Daisy for Jenkins and YinYang for Ansible profile pics
 ##   enclose variable calls in quotes to protect spaces, i.e.:
@@ -130,7 +132,7 @@ install_rvm () { curl -sSL https://get.rvm.io | bash -s stable; }
 install_android_studio () { cd ${LOCALREPO} && ls -tr android-studio*.dmg | tail -1 | xargs open; }
 
 ## prep to install Jenkins
-prep_jenkins_before {
+prep_jenkins_before_install {
   sudo mkdir /Users/Shared/Jenkins;
   chown -R jenkins /Users/Shared/Jenkins;
 }
@@ -144,9 +146,18 @@ install_jenkins () {
 }
 
 ## prep after Jenkins installation
-prep_jenkins_after {
+prep_jenkins_after_install {
   ## update /Library/Preferences/org.jenkins-ci.plist
-  echo;
+  if [ -f ${LOCALREPO}/${JENK_PLIST_FILE} ]; then 
+    OLD_UG=`stat -f "%u:%g" ${LIB_PREFS_DIR}/${JENK_PLIST_FILE}
+    OLD_PERM=`stat -f "%p"  ${LIB_PREFS_DIR}/${JENK_PLIST_FILE}
+    cp -p ${LIB_PREFS_DIR}/${JENK_PLIST_FILE} ${LIB_PREFS_DIR}/${JENK_PLIST_FILE}.bak.`date +"%Y%m%d.%H%M"`
+    cp -p ${LOCALREPO}/${JENK_PLIST_FILE} ${LIB_PREFS_DIR}
+    chown ${OLD_UG}   ${LIB_PREFS_DIR}/${JENK_PLIST_FILE}
+    chmod ${OLD_PERM} ${LIB_PREFS_DIR}/${JENK_PLIST_FILE}
+  else
+    echo "No new ${JENK_PLIST_FILE} found in ${LOCALREPO}"
+  fi
 }
 
 ## install Microsoft Visual Studio
@@ -169,12 +180,15 @@ echo
 echo "## List of things to do:"
 echo install_xcode
 echo install_dev_tools
+echo install_homebrew 
 echo install_java
 echo install_node
 echo install_appium
 echo install_rvm
 echo install_android_studio
+echo prep_jenkins_before_install 
 echo install_jenkins
+echo prep_jenkins_after_install 
 echo install_ms_visual_studio
 
 
