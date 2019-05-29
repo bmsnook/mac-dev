@@ -76,7 +76,8 @@ create_account_ansible_dscl () {
 download_xcode () { cd ${LOCALREPO} && curl -O https://download.developer.apple.com/Developer_Tools/Xcode_10.2.1/Xcode_10.2.1.xip; }
 
 ## install Xcode
-install_xcode () { cd ${LOCALREPO} && ls -tr Xcode*.xip | tail -1 | xargs open; }
+install_xcode () { 
+  cd ${LOCALREPO} && ls -tr Xcode*.xip | tail -1 | xargs open && open Xcode.app; }
 
 ## install Developer tools
 install_dev_tools () { xcode-select --install; }
