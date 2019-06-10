@@ -9,6 +9,8 @@ export DOWNLOADS="~/Downloads"
 export LOCALREPO="${DOWNLOADS}"
 export LIB_PREFS_DIR="/Library/Preferences"
 export JENK_PLIST_FILE="org.jenkins-ci.plist"
+## Explicitly declare PATH to try to circumvent calling other scripts
+export PATH="/usr/sbin:/usr/bin"
 
 ## Using the Daisy for Jenkins and YinYang for Ansible profile pics
 ##   enclose variable calls in quotes to protect spaces, i.e.:
@@ -51,7 +53,10 @@ set_energy_settings () { \
 create_account_ansible () { \
   NUID=`get_next_uid`;
   PASS=`head -1 /dev/random | md5`;
-sudo ${SBIN}/sysadminctl -addUser ansible -fullName "Ansible" -UID ${NUID} -shell /bin/bash -password ${PASS} -hint "Use SSH Keys" -picture ${YINYANG_PIC} -admin;
+  sudo ${SBIN}/sysadminctl -addUser ansible -fullName "Ansible" -UID ${NUID} -shell /bin/bash \
+    -password ${PASS} -hint "Use SSH Keys" -picture ${YINYANG_PIC} -admin;
+  # Prevent the Ansible user from appearing in the GUI login list
+  sudo dscl . -create /Users/ansible IsHidden 1
 }
 
 create_account_ansible_dscl () {
@@ -65,6 +70,8 @@ create_account_ansible_dscl () {
   sudo dscl . -create /Users/ansible NFSHomeDirectory /Users/ansible;
   sudo dscl . -passwd /Users/ansible ${PASS};
   sudo dscl . -merge /Groups/admin GroupMembership ansible;
+  # Prevent the Ansible user from appearing in the GUI login list
+  sudo dscl . -create /Users/ansible IsHidden 1
 }
 
 
@@ -161,29 +168,91 @@ prep_jenkins_after_install () {
 ##   https://visualstudio.microsoft.com/thank-you-downloading-visual-studio-mac/?sku=communitymac&rel=16#
 install_ms_visual_studio () { cd ${LOCALREPO} && ls -tr VisualStudio*.dmg | tail -1 | xargs open; }
 
+update_system_path () {
+  cat <<- 'EOF' >> /etc/bashrc
+	export ANDROID_HOME=/Users/jenkins/Library/Android/sdk
+	export PATH=$ANDROID_HOME/platform-tools:$PATH
+	export PATH=$ANDROID_HOME/tools:$PATH
+	export JAVA_HOME=$(/usr/libexec/java_home)
+	export PATH="/usr/local/opt/openssl/bin:$PATH"
+	EOF
+}
+
+list_functions () {
+  awk '/[-A-Za-z0-9][ ]?\(\)[ ]\{/{gsub(/\(|\)/,"");print "\t" $1}' $0;
+}
+
+call_function () {
+  $1 2> /dev/null
+  if [ $? != 0 ]; then 
+    echo "ERROR: Function '$1' not found."
+    echo "Available functions are"
+    list_functions
+  fi
+}
+
+call_function_and_wait () {
+  $1 2> /dev/null
+  if [ $? != 0 ]; then 
+    echo "ERROR: Function '$1' not found."
+    echo "Available functions are"
+    list_functions
+  fi
+  echo -n "Please press ENTER when ready to proceed. "
+  read response
+}
 
 ## COMMANDS - Main Execution
 ## 
-echo
-echo "## Complete system prerequisites"
-echo update_os 
-echo get_energy_settings
-echo set_energy_settings
-echo get_energy_settings
-echo create_account_ansible
-echo 
-echo "## List of things to do:"
-echo install_xcode
-echo install_dev_tools
-echo install_homebrew 
-echo install_java
-echo install_node
-echo install_appium
-echo install_rvm
-echo install_android_studio
-echo prep_jenkins_before_install 
-echo install_jenkins
-echo prep_jenkins_after_install 
-echo install_ms_visual_studio
 
+if [ $# -gt 0 ]; then
+  if [[ "$1" == *"/"* ]]; then
+    echo "Valid functions don't contain \"/\""
+    list_functions
+  else
+	call_function "$1"
+  fi
+else
+  # run default system configuration
+	echo
+	echo "## Complete system prerequisites"
+	echo update_os 
+	call_function update_os 
+	echo get_energy_settings
+	call_function get_energy_settings
+	echo set_energy_settings
+	call_function set_energy_settings
+	echo get_energy_settings
+	call_function get_energy_settings
+	echo create_account_ansible
+	call_function create_account_ansible
+	echo 
+	echo "## Configure Applications"
+	echo install_xcode
+	call_function_and_wait install_xcode
+	echo install_dev_tools
+	call_function_and_wait install_dev_tools
+	echo install_homebrew 
+	call_function_and_wait install_homebrew 
+	echo install_java
+	call_function_and_wait install_java
+	echo install_node
+	call_function_and_wait install_node
+	echo install_appium
+	call_function_and_wait install_appium
+	echo install_rvm
+	call_function_and_wait install_rvm
+	echo install_android_studio
+	call_function_and_wait install_android_studio
+	echo prep_jenkins_before_install 
+	call_function_and_wait prep_jenkins_before_install 
+	echo install_jenkins
+	call_function_and_wait install_jenkins
+	echo prep_jenkins_after_install 
+	call_function_and_wait prep_jenkins_after_install 
+	echo install_ms_visual_studio
+	call_function_and_wait install_ms_visual_studio
+	echo update_system_path
+	call_function_and_wait update_system_path
+fi
 
