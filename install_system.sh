@@ -54,7 +54,7 @@ create_account_ansible () { \
   NUID=`get_next_uid`;
   PASS=`head -1 /dev/random | md5`;
   sudo ${SBIN}/sysadminctl -addUser ansible -fullName "Ansible" -UID ${NUID} -shell /bin/bash \
-    -password ${PASS} -hint "Use SSH Keys" -picture ${YINYANG_PIC} -admin;
+    -password "${PASS}" -hint "Use SSH Keys" -picture "${YINYANG_PIC}" -admin;
   # Prevent the Ansible user from appearing in the GUI login list
   sudo dscl . -create /Users/ansible IsHidden 1
 }
